@@ -207,7 +207,7 @@ namespace Simple_Gamemodes.Gamemodes
             }
             yield return base.DoPointStart();
             this.StartCoroutine(UpdateScores());
-            TimeLeftInRound = 180;
+            resetRoundTimer();
         }
 
 
@@ -221,7 +221,7 @@ namespace Simple_Gamemodes.Gamemodes
             }
             yield return base.DoRoundStart();
             this.StartCoroutine(UpdateScores());
-            TimeLeftInRound = 180;
+            resetRoundTimer();
         }
 
 
@@ -241,6 +241,11 @@ namespace Simple_Gamemodes.Gamemodes
         {
             Destroy(timer);
             base.OnDisable();
+        }
+
+        private void resetRoundTimer()
+        {
+            TimeLeftInRound = Main.TimedDeathmatch_Time.Value;
         }
     }
 }

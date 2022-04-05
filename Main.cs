@@ -14,6 +14,9 @@ using UnboundLib.Networking;
 using UnityEngine;
 using UnboundLib.Utils.UI;
 using TMPro;
+using UnityEngine.UI;
+using UnityEngine.Events;
+using System;
 
 namespace Simple_Gamemodes
 {
@@ -30,7 +33,7 @@ namespace Simple_Gamemodes
         private const string ModName = "Simple_Gamemodes";
         public const string Version = "0.0.0"; // What version are we on (major.minor.patch)?
 
-        public static ConfigEntry<float> TimedDeathmatch_Time;
+        public static ConfigEntry<int> TimedDeathmatch_Time;
 
         void Awake()
         {
@@ -38,7 +41,7 @@ namespace Simple_Gamemodes
             var harmony = new Harmony(ModId);
             harmony.PatchAll();
 
-            TimedDeathmatch_Time = Config.Bind(ModName, "TD_Time", 3f, "Duration of Timed Deathmatch rounds in minutes");
+            TimedDeathmatch_Time = Config.Bind(ModName, "TD_Time", 180, "Duration of Timed Deathmatch rounds in seconds");
         }
 
         void Start()
@@ -62,37 +65,38 @@ namespace Simple_Gamemodes
         }
 
         [UnboundRPC]
-        private static void SyncSettings(float host_TD_Time)
+        private static void SyncSettings(int host_TD_Time)
         {
             TimedDeathmatch_Time.Value = host_TD_Time;
         }
 
         private void NewGUI(GameObject menu)
         {
-
+            TextMeshProUGUI Timer = null;
             MenuHandler.CreateText(ModName + " Options", menu, out TextMeshProUGUI _, 60);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
+            MenuHandler.CreateSlider("Duration of Timed Deathmatch rounds in seconds", menu, 30, 60, 300, TimedDeathmatch_Time.Value, TD_Timer_Changed, out _, true);
+            MenuHandler.CreateText(get_time_text(TimedDeathmatch_Time.Value), menu, out Timer, 45);
+
             void TD_Timer_Changed(float val)
             {
-                TimedDeathmatch_Time.Value = clampToForth(val);
+                TimedDeathmatch_Time.Value = UnityEngine.Mathf.RoundToInt(val);
                 OnHandShakeCompleted();
+
+                if (Timer != null)
+                    Timer.text = get_time_text(TimedDeathmatch_Time.Value);
             }
-            MenuHandler.CreateSlider("Duration of Timed Deathmatch rounds in minutes", menu, 30, 1f, (float)5, TimedDeathmatch_Time.Value, TD_Timer_Changed, out UnityEngine.UI.Slider _, true);
+
+            string get_time_text(int value)
+            {
+                int m = UnityEngine.Mathf.FloorToInt(value / 60f);
+                int s = UnityEngine.Mathf.FloorToInt(value - (m * 60f));
+                return $"{m}:{(s < 10 ? "0" : "")}{s}";
+            }
 
         }
 
         
-        private float clampToForth(float val)
-        {
-            float remainder = val - (int)val;
-            if(remainder>= 0.5f)
-            {
-                return (val - (int)val) + remainder >= 0.75f? 0.75f:0.50f;
-            }
-            else
-            {
-                return (val - (int)val) + remainder >= 0.25f ? 0.25f : 0.00f;
-            }
-        }
+
     }
 }

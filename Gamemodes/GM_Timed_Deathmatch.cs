@@ -110,31 +110,31 @@ namespace Simple_Gamemodes.Gamemodes
             {
                 if (Main.TimedDeathmatch_Inverted.Value)
                 {
-                    NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch),nameof(UpdateKills), new object[] { killedPlayer.playerID, --KillsThisBattle[killedPlayer.playerID] });
+                    NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
                 }
                 else
                 {
                     if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
                     { 
-                        NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, --KillsThisBattle[killedPlayer.playerID] });
+                        NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
                     }
                     else
                     {
                         if (GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
-                            NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, ++KillsThisBattle[killedPlayer.playerID] });
+                            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, 1 });
                         else
-                            NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { lastPlayerDamage[killedPlayer.playerID], ++KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]] });
+                            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { lastPlayerDamage[killedPlayer.playerID], 1 });
                     }
                 }
-                this.StartCoroutine(UpdateScores());
+                NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay, this.GetSpawn(killedPlayer.teamID) });
             }
-            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay , this.GetSpawn(killedPlayer.teamID) });
+           
         }
 
         [UnboundRPC]
         public static void UpdateKills(int playerID, int kills)
         {
-            instance.KillsThisBattle[playerID] = kills;
+            instance.KillsThisBattle[playerID] += kills;
             instance.StartCoroutine(instance.UpdateScores());
         }
 
@@ -232,6 +232,8 @@ namespace Simple_Gamemodes.Gamemodes
         }
         public override IEnumerator DoPointStart()
         {
+            this.deathsThisBattle = new Dictionary<int, int>() { };
+            this.KillsThisBattle = new Dictionary<int, int>() { };
             foreach (Player player in PlayerManager.instance.players)
             {
                 this.deathsThisBattle[player.playerID] = 0;
@@ -246,6 +248,8 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override IEnumerator DoRoundStart()
         {
+            this.deathsThisBattle = new Dictionary<int, int>() { };
+            this.KillsThisBattle = new Dictionary<int, int>() { };
             foreach (Player player in PlayerManager.instance.players)
             {
                 this.deathsThisBattle[player.playerID] = 0;

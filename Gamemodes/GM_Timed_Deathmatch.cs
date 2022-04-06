@@ -128,7 +128,7 @@ namespace Simple_Gamemodes.Gamemodes
                 }
                 this.StartCoroutine(UpdateScores());
             }
-            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(RPC_DoRespawn), new object[] { killedPlayer, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay });
+            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(RPC_DoRespawn), new object[] { killedPlayer, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay , this.GetSpawn(killedPlayer.teamID) });
         }
 
         [UnboundRPC]
@@ -179,14 +179,14 @@ namespace Simple_Gamemodes.Gamemodes
 
 
         [UnboundRPC]
-        public static void RPC_DoRespawn(int playerID, float delay)
+        public static void RPC_DoRespawn(int playerID, float delay, Vector3 point)
         {
             instance.awaitingRespawn.Add(playerID);
             Player killedPlayer = PlayerManager.instance.players.Find(p => p.playerID == playerID);
-            instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay));
+            instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay, point));
         }
 
-        public IEnumerator IRespawnPlayer(Player player, float delay)
+        public IEnumerator IRespawnPlayer(Player player, float delay, Vector3 point)
         {
             yield return new WaitForSecondsRealtime(delay);
             if (this.awaitingRespawn.Contains(player.playerID))
@@ -200,7 +200,7 @@ namespace Simple_Gamemodes.Gamemodes
                     PlayerSpotlight.FadeIn(0.1f);
                 }
 
-                player.transform.position = this.GetSpawn(player.teamID);
+                player.transform.position = point; 
                 player.data.playerVel.SetFieldValue("simulated", false);
                 yield return new WaitForSecondsRealtime(2f);
                 player.data.healthHandler.Revive(true);

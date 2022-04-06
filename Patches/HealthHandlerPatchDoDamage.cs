@@ -14,7 +14,12 @@ namespace Simple_Gamemodes.Patches
         private static void Prefix(HealthHandler __instance, Player damagingPlayer)
         {
             if (damagingPlayer != null && GM_Timed_Deathmatch.instance != null)
-                GM_Timed_Deathmatch.instance.lastPlayerDamage[((CharacterData)__instance.GetFieldValue("data")).player.playerID] = damagingPlayer.playerID;
+            {
+                if (ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(damagingPlayer.data).isAIMinion)
+                    GM_Timed_Deathmatch.instance.lastPlayerDamage[((CharacterData)__instance.GetFieldValue("data")).player.playerID] = ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(damagingPlayer.data).spawner.playerID;
+                else 
+                    GM_Timed_Deathmatch.instance.lastPlayerDamage[((CharacterData)__instance.GetFieldValue("data")).player.playerID] = damagingPlayer.playerID;
+            }
         }
     }
 }

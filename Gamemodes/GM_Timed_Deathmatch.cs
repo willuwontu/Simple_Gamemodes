@@ -105,36 +105,36 @@ namespace Simple_Gamemodes.Gamemodes
             }
 
             this.deathsThisBattle[killedPlayer.playerID]++;
-            if (Main.TimedDeathmatch_Inverted.Value) {
-                KillsThisBattle[killedPlayer.playerID]--;
-            }
-            else
+
+            if (PhotonNetwork.IsMasterClient)
             {
-                if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
+                if (Main.TimedDeathmatch_Inverted.Value)
                 {
-                    KillsThisBattle[killedPlayer.playerID]--;
+                    NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch),nameof(UpdateKills), new object[] { killedPlayer.playerID, ++KillsThisBattle[killedPlayer.playerID] });
                 }
                 else
                 {
-                    if (GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
-                        KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]--;
+                    if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
+                    {
+                        NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, ++KillsThisBattle[killedPlayer.playerID] });
+                    }
                     else
-                        KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]++;
+                    {
+                        if (GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
+                            NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, ++KillsThisBattle[killedPlayer.playerID] });
+                        else
+                            NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { lastPlayerDamage[killedPlayer.playerID], ++KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]] });
+                    }
                 }
-            }
-            if (PhotonNetwork.IsMasterClient)
-            {
-                NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(SyncKills), new object[] { KillsThisBattle });
                 this.StartCoroutine(UpdateScores());
             }
-            this.awaitingRespawn.Add(killedPlayer.playerID);
-            this.StartCoroutine(this.IRespawnPlayer(killedPlayer, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay));
+            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(RPC_DoRespawn), new object[] { killedPlayer, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay });
         }
 
         [UnboundRPC]
-        public static void SyncKills(Dictionary<int, int> KillsThisBattle)
+        public static void UpdateKills(int playerID, int kills)
         {
-            instance.KillsThisBattle = KillsThisBattle;
+            instance.KillsThisBattle[playerID] = kills;
             instance.StartCoroutine(instance.UpdateScores());
         }
 
@@ -175,6 +175,15 @@ namespace Simple_Gamemodes.Gamemodes
                 }
             }
             yield break;
+        }
+
+
+        [UnboundRPC]
+        public static void RPC_DoRespawn(int playerID, float delay)
+        {
+            instance.awaitingRespawn.Add(playerID);
+            Player killedPlayer = PlayerManager.instance.players.Find(p => p.playerID == playerID);
+            instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay));
         }
 
         public IEnumerator IRespawnPlayer(Player player, float delay)

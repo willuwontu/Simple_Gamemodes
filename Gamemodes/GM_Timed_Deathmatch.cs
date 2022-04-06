@@ -1,4 +1,6 @@
-﻿using RWF.GameModes;
+﻿using Photon.Pun;
+using RWF.GameModes;
+using RWF.UI;
 using Simple_Gamemodes.Monos;
 using System;
 using System.Collections;
@@ -8,6 +10,7 @@ using System.Text;
 using TMPro;
 using UnboundLib;
 using UnboundLib.GameModes;
+using UnboundLib.Networking;
 using UnityEngine;
 
 namespace Simple_Gamemodes.Gamemodes
@@ -17,9 +20,9 @@ namespace Simple_Gamemodes.Gamemodes
 
         internal static GM_Timed_Deathmatch instance;
         private List<int> awaitingRespawn = new List<int>() { };
-        private Dictionary<int, int> deathsThisBattle = new Dictionary<int, int>() { };
-        private Dictionary<int, int> lastPlayerDamage = new Dictionary<int, int>() { };
-        private Dictionary<int, int> KillsThisBattle = new Dictionary<int, int>() { };
+        internal Dictionary<int, int> deathsThisBattle = new Dictionary<int, int>() { };
+        internal Dictionary<int, int> lastPlayerDamage = new Dictionary<int, int>() { };
+        internal Dictionary<int, int> KillsThisBattle = new Dictionary<int, int>() { };
 
         private const float delayPenaltyPerDeath = 0f;
         private const float baseRespawnDelay = 1f;
@@ -44,6 +47,7 @@ namespace Simple_Gamemodes.Gamemodes
             timer.transform.localPosition = Vector3.up * 17;
             timer.GetOrAddComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
             timer.GetOrAddComponent<Canvas>().sortingLayerName = "MostFront";
+            this.StartCoroutine(this.Init());
         }
         public void Update()
         {
@@ -74,13 +78,6 @@ namespace Simple_Gamemodes.Gamemodes
             {
                 FormatTimer();
                 inRound = true;
-                foreach (Player player in PlayerManager.instance.players)
-                {
-                    if(player.data.lastSourceOfDamage != null)
-                    {
-                        lastPlayerDamage[player.playerID] = player.data.lastSourceOfDamage.playerID;
-                    }
-                }
             }
             TimeLeftInRound -= Time.deltaTime;
         }
@@ -107,28 +104,39 @@ namespace Simple_Gamemodes.Gamemodes
                 return;
             }
 
-            if (killedPlayer.data.lastSourceOfDamage != null)
-            {
-                lastPlayerDamage[killedPlayer.playerID] = killedPlayer.data.lastSourceOfDamage.playerID;
-            }
-
             this.deathsThisBattle[killedPlayer.playerID]++;
-            if(lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
-            {
+            if (Main.TimedDeathmatch_Inverted.Value) {
                 KillsThisBattle[killedPlayer.playerID]--;
             }
             else
             {
-                if(GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
-                    KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]--;
+                if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
+                {
+                    KillsThisBattle[killedPlayer.playerID]--;
+                }
                 else
-                    KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]++;
+                {
+                    if (GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
+                        KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]--;
+                    else
+                        KillsThisBattle[lastPlayerDamage[killedPlayer.playerID]]++;
+                }
             }
-            this.StartCoroutine(UpdateScores());
+            if (PhotonNetwork.IsMasterClient)
+            {
+                NetworkingManager.RPC_Others(typeof(GM_Timed_Deathmatch), nameof(SyncKills), new object[] { KillsThisBattle });
+                this.StartCoroutine(UpdateScores());
+            }
             this.awaitingRespawn.Add(killedPlayer.playerID);
             this.StartCoroutine(this.IRespawnPlayer(killedPlayer, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay));
         }
 
+        [UnboundRPC]
+        public static void SyncKills(Dictionary<int, int> KillsThisBattle)
+        {
+            instance.KillsThisBattle = KillsThisBattle;
+            instance.StartCoroutine(instance.UpdateScores());
+        }
 
         public IEnumerator UpdateScores()
         {
@@ -151,10 +159,20 @@ namespace Simple_Gamemodes.Gamemodes
                     if (teamKills[player.teamID] == maxKills) 
                         color = Color.green;
                 }
-                if (GameModeManager.CurrentHandler.AllowTeams)
-                    player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]} ({teamKills[player.teamID]})", color);
+                if (Main.TimedDeathmatch_Inverted.Value)
+                {
+                    if (GameModeManager.CurrentHandler.AllowTeams)
+                        player.GetComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]} (-{teamKills[player.teamID]})", color);
+                    else
+                        player.GetComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]}", color);
+                }
                 else
-                    player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]}", color);
+                {
+                    if (GameModeManager.CurrentHandler.AllowTeams)
+                        player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]} ({teamKills[player.teamID]})", color);
+                    else
+                        player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]}", color);
+                }
             }
             yield break;
         }
@@ -164,29 +182,35 @@ namespace Simple_Gamemodes.Gamemodes
             yield return new WaitForSecondsRealtime(delay);
             if (this.awaitingRespawn.Contains(player.playerID))
             {
-                player.transform.position = this.GetFarthestSpawn(player.teamID);
+
+                var _ = PlayerSpotlight.Cam;
+                _ = PlayerSpotlight.Group;
+
+                if (player.data.view.IsMine || PhotonNetwork.OfflineMode)
+                {
+                    PlayerSpotlight.FadeIn(0.1f);
+                }
+
+                player.transform.position = this.GetSpawn(player.teamID);
+                player.data.playerVel.SetFieldValue("simulated", false);
+                yield return new WaitForSecondsRealtime(2f);
                 player.data.healthHandler.Revive(true);
-                player.GetComponent<GeneralInput>().enabled = true;
+                if (player.data.view.IsMine || PhotonNetwork.OfflineMode)
+                {
+                    PlayerSpotlight.FadeOut();
+                }
+                player.data.playerVel.SetFieldValue("simulated", true);
+                player.GetComponent<GeneralInput>().enabled = true; 
                 lastPlayerDamage[player.playerID] = player.playerID;
                 this.awaitingRespawn.Remove(player.playerID);
             }
         }
 
-        private Vector3 GetFarthestSpawn(int teamID)
+        private Vector3 GetSpawn(int teamID)
         {
             Vector3[] spawns = MapManager.instance.GetSpawnPoints().Select(s => s.localStartPos).ToArray();
-            float dist = -1f;
-            Vector3 best = Vector3.zero;
-            foreach (Vector3 spawn in spawns)
-            {
-                float thisDist = PlayerManager.instance.players.Where(p => !p.data.dead && p.teamID != teamID).Select(p => Vector3.Distance(p.transform.position, spawn)).Sum();
-                if (thisDist > dist)
-                {
-                    dist = thisDist;
-                    best = spawn;
-                }
-            }
-            return best;
+            spawns.Shuffle();
+            return spawns[0];
         }
 
         public override void PlayerJoined(Player player)

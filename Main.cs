@@ -31,9 +31,10 @@ namespace Simple_Gamemodes
 
         private const string ModId = "Root.Simple.Gamemodes";
         private const string ModName = "Simple_Gamemodes";
-        public const string Version = "0.0.0"; // What version are we on (major.minor.patch)?
+        public const string Version = "1.0.0"; // What version are we on (major.minor.patch)?
 
         public static ConfigEntry<int> TimedDeathmatch_Time;
+        public static ConfigEntry<bool> TimedDeathmatch_Inverted;
 
         void Awake()
         {
@@ -42,6 +43,7 @@ namespace Simple_Gamemodes
             harmony.PatchAll();
 
             TimedDeathmatch_Time = Config.Bind(ModName, "TD_Time", 180, "Duration of Timed Deathmatch rounds in seconds");
+            TimedDeathmatch_Inverted = Config.Bind(ModName, "TD_Invert", false, "Enable to use deaths instead of kills for scoring in Timed Deathmatch");
         }
 
         void Start()
@@ -60,23 +62,26 @@ namespace Simple_Gamemodes
         { 
             if (PhotonNetwork.IsMasterClient)
             {
-                NetworkingManager.RPC_Others(typeof(Main), nameof(SyncSettings), new object[] { TimedDeathmatch_Time.Value });
+                NetworkingManager.RPC_Others(typeof(Main), nameof(SyncSettings), new object[] { TimedDeathmatch_Time.Value, TimedDeathmatch_Inverted });
             }
         }
 
         [UnboundRPC]
-        private static void SyncSettings(int host_TD_Time)
+        private static void SyncSettings(int host_TD_Time, bool host_TD_Invert)
         {
             TimedDeathmatch_Time.Value = host_TD_Time;
+            TimedDeathmatch_Inverted.Value = host_TD_Invert;
         }
 
         private void NewGUI(GameObject menu)
-        {
+        { 
             TextMeshProUGUI Timer = null;
             MenuHandler.CreateText(ModName + " Options", menu, out TextMeshProUGUI _, 60);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateSlider("Duration of Timed Deathmatch rounds in seconds", menu, 30, 60, 300, TimedDeathmatch_Time.Value, TD_Timer_Changed, out _, true);
-            MenuHandler.CreateText(get_time_text(TimedDeathmatch_Time.Value), menu, out Timer, 45);
+            MenuHandler.CreateText(get_time_text(TimedDeathmatch_Time.Value), menu, out Timer, 75);
+            MenuHandler.CreateToggle(TimedDeathmatch_Inverted.Value, "Enable to use deaths instead of kills for scoring in Timed Deathmatch", menu, (value) => TimedDeathmatch_Inverted.Value = value, 30);
+            MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
 
             void TD_Timer_Changed(float val)
             {

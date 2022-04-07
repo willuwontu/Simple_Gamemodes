@@ -32,7 +32,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         private GameObject _timer;
 
-        private GameObject Timer
+        public GameObject Timer
         {
             get
             {

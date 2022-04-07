@@ -53,12 +53,12 @@ namespace Simple_Gamemodes.Gamemodes
 
                     var text = _timer.GetComponent<TextMeshProUGUI>();
                     text.text = "Timer";
-                    text.enableAutoSizing = true;
                     text.alignment = TextAlignmentOptions.Center;
+                    text.fontSize = 50f;
 
                     var fitter = _timer.AddComponent<UnityEngine.UI.ContentSizeFitter>();
                     fitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
-                    fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.Unconstrained;
+                    fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
                 }
 
                 return _timer;

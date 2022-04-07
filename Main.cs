@@ -31,7 +31,7 @@ namespace Simple_Gamemodes
 
         private const string ModId = "Root.Simple.Gamemodes";
         private const string ModName = "Simple_Gamemodes";
-        public const string Version = "1.0.4"; // What version are we on (major.minor.patch)?
+        public const string Version = "1.1.0"; // What version are we on (major.minor.patch)?
 
         public static ConfigEntry<int> TimedDeathmatch_Time;
         public static ConfigEntry<bool> TimedDeathmatch_Inverted;

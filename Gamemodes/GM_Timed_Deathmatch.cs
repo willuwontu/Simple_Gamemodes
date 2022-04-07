@@ -29,41 +29,9 @@ namespace Simple_Gamemodes.Gamemodes
         private float TimeLeftInRound = 0f;
 
         bool inRound = false;
+        private GameObject timer;
 
-        private GameObject _timer;
 
-        public GameObject Timer
-        {
-            get
-            {
-                if (!_timer)
-                {
-                    var _uiGo = GameObject.Find("/Game/UI");
-                    var _gameGo = _uiGo.transform.Find("UI_Game").Find("Canvas").gameObject;
-
-                    _timer = new GameObject("Timed Deathmatch Timer", typeof(RectTransform), typeof(TextMeshProUGUI));
-                    _timer.name = "Timed Deathmatch Timer";
-                    _timer.transform.SetParent(_gameGo.transform);
-
-                    var rect = _timer.GetComponent<RectTransform>();
-                    rect.localScale = Vector3.one;
-                    rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 1);
-                    rect.offsetMax = new Vector2(100, -25);
-                    rect.sizeDelta = new Vector2(200, 50);
-
-                    var text = _timer.GetComponent<TextMeshProUGUI>();
-                    text.text = "Timer";
-                    text.alignment = TextAlignmentOptions.Center;
-                    text.fontSize = 50f;
-
-                    var fitter = _timer.AddComponent<UnityEngine.UI.ContentSizeFitter>();
-                    fitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
-                    fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
-                }
-
-                return _timer;
-            }
-        }
 
         protected override void Awake()
         {
@@ -73,6 +41,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         public void Start()
         {
+            FormatTimer();
             this.StartCoroutine(this.Init());
         }
         public void Update()
@@ -81,22 +50,23 @@ namespace Simple_Gamemodes.Gamemodes
             {
                 if (inRound)
                 {
-                    Timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
+                    timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
                     Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
                     foreach (Player player in PlayerManager.instance.players)
                     {
-                        if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }
+                        if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }if (PhotonNetwork.IsMasterClient)
                         teamKills[player.teamID] += KillsThisBattle[player.playerID];
                     }
                     int minKills = teamKills[teamKills.Keys.OrderBy(t => teamKills[t]).First()];
                     int maxKills = teamKills[teamKills.Keys.OrderBy(t => -teamKills[t]).First()];
                     teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray();
-                    NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
-                       {
-                        maxKills != minKills? teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray() :  new int[] { },
-                        teamPoints,
-                        teamRounds
-                       });
+                    if (PhotonNetwork.IsMasterClient)
+                        NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                        {
+                            maxKills != minKills? teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray() :  new int[] { },
+                            teamPoints,
+                            teamRounds
+                        });
                 }
                 inRound = false;
             }
@@ -110,16 +80,29 @@ namespace Simple_Gamemodes.Gamemodes
 
         private void FormatTimer()
         {
-            int m = UnityEngine.Mathf.FloorToInt(TimeLeftInRound / 60f);
-            int s = UnityEngine.Mathf.FloorToInt(TimeLeftInRound - (m*60f));
-            int ms = UnityEngine.Mathf.FloorToInt((TimeLeftInRound*100) - (UnityEngine.Mathf.Floor(TimeLeftInRound)*100));
-            if(m <= 0 && s <= 10)
+            if (timer == null)
             {
-                Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{s}.{(ms < 10 ? "0" : "")}{ms}";
+
+                timer = new GameObject("Timer");
+                timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
+                timer.GetOrAddComponent<TextMeshProUGUI>().fontSize = 2.5f;
+                timer.transform.localPosition = Vector3.up * 17;
+                timer.GetOrAddComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+                timer.GetOrAddComponent<Canvas>().sortingLayerName = "MostFront";
             }
             else
             {
-                Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{m}:{(s<10? "0":"")}{s}";
+                int m = UnityEngine.Mathf.FloorToInt(TimeLeftInRound / 60f);
+                int s = UnityEngine.Mathf.FloorToInt(TimeLeftInRound - (m * 60f));
+                int ms = UnityEngine.Mathf.FloorToInt((TimeLeftInRound * 100) - (UnityEngine.Mathf.Floor(TimeLeftInRound) * 100));
+                if (m <= 0 && s <= 10)
+                {
+                    timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{s}.{(ms < 10 ? "0" : "")}{ms}";
+                }
+                else
+                {
+                    timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{m}:{(s < 10 ? "0" : "")}{s}";
+                }
             }
         }
 
@@ -162,10 +145,10 @@ namespace Simple_Gamemodes.Gamemodes
         public static void UpdateKills(int playerID, int kills)
         {
             instance.KillsThisBattle[playerID] += kills;
-            instance.StartCoroutine(instance.UpdateScores());
+            instance.UpdateScores();
         }
 
-        public IEnumerator UpdateScores()
+        public void UpdateScores()
         {
 
             Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
@@ -189,19 +172,18 @@ namespace Simple_Gamemodes.Gamemodes
                 if (Main.TimedDeathmatch_Inverted.Value)
                 {
                     if (GameModeManager.CurrentHandler.AllowTeams)
-                        player.GetComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]} (-{teamKills[player.teamID]})", color);
+                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]} (-{teamKills[player.teamID]})", color);
                     else
-                        player.GetComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]}", color);
+                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]}", color);
                 }
                 else
                 {
                     if (GameModeManager.CurrentHandler.AllowTeams)
-                        player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]} ({teamKills[player.teamID]})", color);
+                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]} ({teamKills[player.teamID]})", color);
                     else
-                        player.GetComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]}", color);
+                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]}", color);
                 }
             }
-            yield break;
         }
 
 
@@ -267,7 +249,7 @@ namespace Simple_Gamemodes.Gamemodes
                 this.lastPlayerDamage[player.playerID] = player.playerID;
             }
             yield return base.DoPointStart();
-            this.StartCoroutine(UpdateScores());
+            UpdateScores();
             resetRoundTimer();
         }
 
@@ -283,7 +265,7 @@ namespace Simple_Gamemodes.Gamemodes
                 this.lastPlayerDamage[player.playerID] = player.playerID;
             }
             yield return base.DoRoundStart();
-            this.StartCoroutine(UpdateScores());
+            UpdateScores();
             resetRoundTimer();
         }
 
@@ -302,7 +284,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override void OnDisable()
         {
-            Destroy(Timer);
+            Destroy(timer);
             base.OnDisable();
         }
 

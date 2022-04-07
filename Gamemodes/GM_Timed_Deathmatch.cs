@@ -85,9 +85,8 @@ namespace Simple_Gamemodes.Gamemodes
                     Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
                     foreach (Player player in PlayerManager.instance.players)
                     {
-                        if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }
-                        if (PhotonNetwork.IsMasterClient)
-                            teamKills[player.teamID] += KillsThisBattle[player.playerID];
+                        if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }if (PhotonNetwork.IsMasterClient)
+                        teamKills[player.teamID] += KillsThisBattle[player.playerID];
                     }
                     int minKills = teamKills[teamKills.Keys.OrderBy(t => teamKills[t]).First()];
                     int maxKills = teamKills[teamKills.Keys.OrderBy(t => -teamKills[t]).First()];
@@ -112,17 +111,17 @@ namespace Simple_Gamemodes.Gamemodes
 
         private void FormatTimer()
         {
-            int m = UnityEngine.Mathf.FloorToInt(TimeLeftInRound / 60f);
-            int s = UnityEngine.Mathf.FloorToInt(TimeLeftInRound - (m * 60f));
-            int ms = UnityEngine.Mathf.FloorToInt((TimeLeftInRound * 100) - (UnityEngine.Mathf.Floor(TimeLeftInRound) * 100));
-            if (m <= 0 && s <= 10)
-            {
-                Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{s}.{(ms < 10 ? "0" : "")}{ms}";
-            }
-            else
-            {
-                Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{m}:{(s < 10 ? "0" : "")}{s}";
-            }
+                int m = UnityEngine.Mathf.FloorToInt(TimeLeftInRound / 60f);
+                int s = UnityEngine.Mathf.FloorToInt(TimeLeftInRound - (m * 60f));
+                int ms = UnityEngine.Mathf.FloorToInt((TimeLeftInRound * 100) - (UnityEngine.Mathf.Floor(TimeLeftInRound) * 100));
+                if (m <= 0 && s <= 10)
+                {
+                    Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{s}.{(ms < 10 ? "0" : "")}{ms}";
+                }
+                else
+                {
+                    Timer.GetOrAddComponent<TextMeshProUGUI>().text = $"{m}:{(s < 10 ? "0" : "")}{s}";
+                }
         }
 
         public override void PlayerDied(Player killedPlayer, int teamsAlive)
@@ -139,12 +138,12 @@ namespace Simple_Gamemodes.Gamemodes
             {
                 if (Main.TimedDeathmatch_Inverted.Value)
                 {
-                    NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
+                    NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
                 }
                 else
                 {
                     if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
-                    {
+                    { 
                         NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
                     }
                     else
@@ -157,7 +156,7 @@ namespace Simple_Gamemodes.Gamemodes
                 }
                 NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay, this.GetSpawn(killedPlayer.teamID) });
             }
-
+           
         }
 
         [UnboundRPC]
@@ -185,7 +184,7 @@ namespace Simple_Gamemodes.Gamemodes
                 {
                     if (teamKills[player.teamID] == minKills)
                         color = Color.red;
-                    if (teamKills[player.teamID] == maxKills)
+                    if (teamKills[player.teamID] == maxKills) 
                         color = Color.green;
                 }
                 if (Main.TimedDeathmatch_Inverted.Value)
@@ -227,7 +226,7 @@ namespace Simple_Gamemodes.Gamemodes
                     PlayerSpotlight.FadeIn(0.1f);
                 }
 
-                player.transform.position = point;
+                player.transform.position = point; 
                 player.data.playerVel.SetFieldValue("simulated", false);
                 yield return new WaitForSecondsRealtime(2f);
                 player.data.healthHandler.Revive(true);
@@ -236,7 +235,7 @@ namespace Simple_Gamemodes.Gamemodes
                     PlayerSpotlight.FadeOut();
                 }
                 player.data.playerVel.SetFieldValue("simulated", true);
-                player.GetComponent<GeneralInput>().enabled = true;
+                player.GetComponent<GeneralInput>().enabled = true; 
                 lastPlayerDamage[player.playerID] = player.playerID;
                 this.awaitingRespawn.Remove(player.playerID);
             }

@@ -106,6 +106,7 @@ namespace Simple_Gamemodes.Gamemodes
 
             this.deathsThisBattle[killedPlayer.playerID]++;
 
+            instance.awaitingRespawn.Add(killedPlayer.playerID);
             if (PhotonNetwork.IsMasterClient)
             {
                 if (Main.TimedDeathmatch_Inverted.Value)
@@ -181,7 +182,6 @@ namespace Simple_Gamemodes.Gamemodes
         [UnboundRPC]
         public static void RPC_DoRespawn(int playerID, float delay, Vector3 point)
         {
-            instance.awaitingRespawn.Add(playerID);
             Player killedPlayer = PlayerManager.instance.players.Find(p => p.playerID == playerID);
             instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay, point));
         }

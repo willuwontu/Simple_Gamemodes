@@ -1,6 +1,7 @@
 ﻿using Photon.Pun;
 using RWF.GameModes;
 using RWF.UI;
+using Simple_Gamemodes.Extentions;
 using Simple_Gamemodes.Monos;
 using System;
 using System.Collections;
@@ -261,9 +262,13 @@ namespace Simple_Gamemodes.Gamemodes
                 {
                     PlayerSpotlight.FadeOut();
                 }
+                player.data.stats.GetAditionalData().invanerable = true;
                 player.data.playerVel.SetFieldValue("simulated", true);
                 player.GetComponent<GeneralInput>().enabled = true; 
                 this.awaitingRespawn.Remove(player.playerID);
+                yield return new WaitForSecondsRealtime(0.5f);
+                player.data.stats.GetAditionalData().invanerable = false;
+
             }
         }
 

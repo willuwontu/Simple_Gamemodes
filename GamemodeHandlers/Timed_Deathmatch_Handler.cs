@@ -21,7 +21,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Free for all with limited respawns enabled")
+            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.")
         {
 
         }
@@ -42,7 +42,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Team battle with limited respawns enabled")
+            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.")
         {
 
         }

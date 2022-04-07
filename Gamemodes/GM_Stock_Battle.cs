@@ -86,7 +86,8 @@ namespace Simple_Gamemodes.Gamemodes
                             foreach (Player player in PlayerManager.instance.players)
                             {
                                 if (!playersAlive.ContainsKey(player.teamID)) { playersAlive[player.teamID] = 0; }
-                                playersAlive[player.teamID]++;
+                                if(Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID] > 0)
+                                    playersAlive[player.teamID]++;
                             }
                             int mostAlive = playersAlive.Values.Max();
                             if(playersAlive.Values.Where((v) => v == mostAlive).Count() == 1)
@@ -104,9 +105,9 @@ namespace Simple_Gamemodes.Gamemodes
                                 Dictionary<int, int> teamLives = new Dictionary<int, int>();
                                 foreach (Player player in PlayerManager.instance.players)
                                 {
-                                    if (playersAlive[player.teamID] != mostAlive) continue;
-                                    if (!playersAlive.ContainsKey(player.teamID)) { teamLives[player.teamID] = 0; }
-                                    teamLives[player.teamID]++;
+                                    if (teamLives[player.teamID] != mostAlive) continue;
+                                    if (!teamLives.ContainsKey(player.teamID)) { teamLives[player.teamID] = 0; }
+                                    teamLives[player.teamID] += Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID];
                                 }
                                 int mostLives = teamLives.Values.Max();
                                 if (PhotonNetwork.IsMasterClient)
@@ -137,26 +138,6 @@ namespace Simple_Gamemodes.Gamemodes
                                 }); 
 
                         }
-
-
-                        /*
-                        Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
-                        foreach (Player player in PlayerManager.instance.players)
-                        {
-                            if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }
-                            if (PhotonNetwork.IsMasterClient)
-                                teamKills[player.teamID] += KillsThisBattle[player.playerID];
-                        }
-                        int minKills = teamKills[teamKills.Keys.OrderBy(t => teamKills[t]).First()];
-                        int maxKills = teamKills[teamKills.Keys.OrderBy(t => -teamKills[t]).First()];
-                        teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray();
-                        if (PhotonNetwork.IsMasterClient)
-                            NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
-                            {
-                            maxKills != minKills? teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray() :  new int[] { },
-                            teamPoints,
-                            teamRounds
-                            });*/
                     }
                     inRound = false;
                 }
@@ -203,7 +184,7 @@ namespace Simple_Gamemodes.Gamemodes
             instance.awaitingRespawn.Add(killedPlayer.playerID);
             if (PhotonNetwork.IsMasterClient)
             {               
-                NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, RespawnDelay, this.GetSpawn(killedPlayer.teamID) });
+                NetworkingManager.RPC(typeof(GM_Stock_Battle), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, RespawnDelay, this.GetSpawn(killedPlayer.teamID) });
             }
            
         }
@@ -214,7 +195,7 @@ namespace Simple_Gamemodes.Gamemodes
             int winning_team = -1;
             foreach (Player player in PlayerManager.instance.players)
             {
-                if (instance.deathsThisBattle[player.playerID] > 0)
+                if (Main.StockBattle_Lives.Value - instance.deathsThisBattle[player.playerID] > 0)
                 {
                     if (winning_team != -1 && winning_team != player.teamID) return;
                     winning_team = player.teamID;
@@ -234,8 +215,8 @@ namespace Simple_Gamemodes.Gamemodes
             foreach (Player player in PlayerManager.instance.players)
             {
                 int lives = Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID];
-                float lives_percent = (lives - 1) / (Main.StockBattle_Lives.Value - 1);
-                Color color = new Color(1- lives_percent, lives_percent, 0,1);
+                float lives_percent = (lives - 1) / (float)(Main.StockBattle_Lives.Value - 1);
+                Color color = new Color(1 - lives_percent, lives_percent, 0,1);
                 player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{lives}", color);
             }
         }
@@ -244,13 +225,18 @@ namespace Simple_Gamemodes.Gamemodes
         [UnboundRPC]
         public static void RPC_DoRespawn(int playerID, float delay, Vector3 point)
         {
-            instance.deathsThisBattle[playerID]--;
+            instance.deathsThisBattle[playerID]++;
+            UnityEngine.Debug.Log(instance.deathsThisBattle[playerID]);
             instance.UpdateScores();
             Player killedPlayer = PlayerManager.instance.players.Find(p => p.playerID == playerID);
-            if(instance.deathsThisBattle[playerID] > 0)
+            if (Main.StockBattle_Lives.Value - instance.deathsThisBattle[playerID] > 0)
                 instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay, point));
             else
+            {
+
+                instance.awaitingRespawn.Remove(playerID);
                 instance.CheckForWinner();
+            }
         }
 
         public IEnumerator IRespawnPlayer(Player player, float delay, Vector3 point)

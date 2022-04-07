@@ -16,12 +16,12 @@ namespace Simple_Gamemodes.Monos
         public override void OnStart()
         {
             SetLivesToEffect(int.MaxValue);
-            kills = new GameObject();
-            kills.transform.SetParent(player.transform, false);
-            kills.transform.localPosition = Vector3.up * 2;
+            kills = new GameObject("Score_Tracker");
+            kills.transform.SetParent(player.transform.Find("WobbleObjects"), false);
+            kills.transform.localPosition = Vector3.up * 1.75f;
             kills.GetOrAddComponent<TextMeshProUGUI>().text = "";
             kills.GetOrAddComponent<TextMeshProUGUI>().color = Color.yellow;
-            kills.GetOrAddComponent<TextMeshProUGUI>().fontSize = 0.5f;
+            kills.GetOrAddComponent<TextMeshProUGUI>().fontSize = 0.75f;
             kills.GetOrAddComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
             kills.GetOrAddComponent<Canvas>().sortingLayerName = "MostFront";
         }

@@ -75,6 +75,15 @@ namespace Simple_Gamemodes.Monos
             this.player = this.GetComponentInParent<Player>();
 
             this.UpdateScore("0", new Color32(255, 255, 255, 255));
+            SetLivesToEffect(int.MaxValue);
+            kills = new GameObject("Score_Tracker");
+            kills.transform.SetParent(player.transform.Find("WobbleObjects"), false);
+            kills.transform.localPosition = Vector3.up * 1.75f;
+            kills.GetOrAddComponent<TextMeshProUGUI>().text = "";
+            kills.GetOrAddComponent<TextMeshProUGUI>().color = Color.yellow;
+            kills.GetOrAddComponent<TextMeshProUGUI>().fontSize = 0.75f;
+            kills.GetOrAddComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
+            kills.GetOrAddComponent<Canvas>().sortingLayerName = "MostFront";
         }
 
 

@@ -16,17 +16,14 @@ using UnityEngine;
 
 namespace Simple_Gamemodes.Gamemodes
 {
-    public class GM_Timed_Deathmatch : RWFGameMode
+    public class GM_Stock_Battle : RWFGameMode
     {
 
-        internal static GM_Timed_Deathmatch instance;
+        internal static GM_Stock_Battle instance;
         private List<int> awaitingRespawn = new List<int>() { };
         internal Dictionary<int, int> deathsThisBattle = new Dictionary<int, int>() { };
-        internal Dictionary<int, int> lastPlayerDamage = new Dictionary<int, int>() { };
-        internal Dictionary<int, int> KillsThisBattle = new Dictionary<int, int>() { };
 
-        private const float delayPenaltyPerDeath = 0f;
-        private const float baseRespawnDelay = 1f;
+        private const float RespawnDelay = 1f;
         private float TimeLeftInRound = 0f;
 
         bool inRound = false;
@@ -67,7 +64,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         protected override void Awake()
         {
-            GM_Timed_Deathmatch.instance = this;
+            GM_Stock_Battle.instance = this;
             base.Awake();
         }
 
@@ -77,36 +74,90 @@ namespace Simple_Gamemodes.Gamemodes
         }
         public void Update()
         {
-            if (TimeLeftInRound <= 0)
+            if (Main.StockBattle_Timed.Value)
             {
-                if (inRound)
+                if (TimeLeftInRound <= 0)
                 {
-                    Timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
-                    Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
-                    foreach (Player player in PlayerManager.instance.players)
+                    if (inRound)
                     {
-                        if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }if (PhotonNetwork.IsMasterClient)
-                        teamKills[player.teamID] += KillsThisBattle[player.playerID];
-                    }
-                    int minKills = teamKills[teamKills.Keys.OrderBy(t => teamKills[t]).First()];
-                    int maxKills = teamKills[teamKills.Keys.OrderBy(t => -teamKills[t]).First()];
-                    teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray();
-                    if (PhotonNetwork.IsMasterClient)
-                        NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                        Timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
+                        if (GameModeManager.CurrentHandler.AllowTeams)
                         {
-                            maxKills != minKills? teamKills.Keys.Where(t => teamKills[t] == maxKills).ToArray() :  new int[] { },
+                            Dictionary<int, int> playersAlive = new Dictionary<int, int>();
+                            foreach (Player player in PlayerManager.instance.players)
+                            {
+                                if (!playersAlive.ContainsKey(player.teamID)) { playersAlive[player.teamID] = 0; }
+                                if(Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID] > 0)
+                                    playersAlive[player.teamID]++;
+                            }
+                            int mostAlive = playersAlive.Values.Max();
+                            if(playersAlive.Values.Where((v) => v == mostAlive).Count() == 1)
+                            {
+                                if (PhotonNetwork.IsMasterClient)
+                                    NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                                    {
+                                     playersAlive.Keys.Where((v) => playersAlive[v] == mostAlive).ToArray() ,
+                                        teamPoints,
+                                        teamRounds
+                                    });
+                            }
+                            else
+                            {
+                                Dictionary<int, int> teamLives = new Dictionary<int, int>();
+                                foreach (Player player in PlayerManager.instance.players)
+                                {
+                                    if (teamLives[player.teamID] != mostAlive) continue;
+                                    if (!teamLives.ContainsKey(player.teamID)) { teamLives[player.teamID] = 0; }
+                                    teamLives[player.teamID] += Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID];
+                                }
+                                int mostLives = teamLives.Values.Max();
+                                if (PhotonNetwork.IsMasterClient)
+                                    NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                                    {
+                                     teamLives.Keys.Where((v) => teamLives[v] == mostLives).ToArray() ,
+                                        teamPoints,
+                                        teamRounds
+                                    });
+                            }
+                        }
+                        else
+                        {
+                            int mostLives = 0;
+
+                            foreach (Player player in PlayerManager.instance.players)
+                            {
+                                int lives = Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID];
+                                if (lives > mostLives) mostLives = lives;
+                            }
+                            
+                            if (PhotonNetwork.IsMasterClient)
+                                NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                                {
+                                ToTeams(PlayerManager.instance.players.Where((player) => Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID] == mostLives)).ToArray(),
                             teamPoints,
                             teamRounds
-                        });
+                                }); 
+
+                        }
+                    }
+                    inRound = false;
                 }
-                inRound = false;
+                else
+                {
+                    FormatTimer();
+                    inRound = true;
+                }
+                TimeLeftInRound -= Time.deltaTime;
             }
-            else
+        }
+
+
+        private static IEnumerable<int> ToTeams(IEnumerable<Player> source)
+        {
+            foreach( Player player in source)
             {
-                FormatTimer();
-                inRound = true;
+                yield return player.teamID;
             }
-            TimeLeftInRound -= Time.deltaTime;
         }
 
         private void FormatTimer()
@@ -131,76 +182,43 @@ namespace Simple_Gamemodes.Gamemodes
                 return;
             }
 
-            this.deathsThisBattle[killedPlayer.playerID]++;
-
             instance.awaitingRespawn.Add(killedPlayer.playerID);
             if (PhotonNetwork.IsMasterClient)
-            {
-                if (Main.TimedDeathmatch_Inverted.Value)
-                {
-                    NetworkingManager.RPC(typeof(GM_Timed_Deathmatch),nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
-                }
-                else
-                {
-                    if (lastPlayerDamage[killedPlayer.playerID] == killedPlayer.playerID)
-                    { 
-                        NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, -1 });
-                    }
-                    else
-                    {
-                        if (GetPlayerWithID(lastPlayerDamage[killedPlayer.playerID]).teamID == killedPlayer.teamID)
-                            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { killedPlayer.playerID, 1 });
-                        else
-                            NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(UpdateKills), new object[] { lastPlayerDamage[killedPlayer.playerID], 1 });
-                    }
-                }
-                NetworkingManager.RPC(typeof(GM_Timed_Deathmatch), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, delayPenaltyPerDeath * (this.deathsThisBattle[killedPlayer.playerID] - 1) + baseRespawnDelay, this.GetSpawn(killedPlayer.teamID) });
+            {               
+                NetworkingManager.RPC(typeof(GM_Stock_Battle), nameof(RPC_DoRespawn), new object[] { killedPlayer.playerID, RespawnDelay, this.GetSpawn(killedPlayer.teamID) });
             }
            
         }
 
-        [UnboundRPC]
-        public static void UpdateKills(int playerID, int kills)
+        public void CheckForWinner()
         {
-            instance.KillsThisBattle[playerID] += kills;
-            instance.UpdateScores();
+            if (!PhotonNetwork.IsMasterClient) return;
+            int winning_team = -1;
+            foreach (Player player in PlayerManager.instance.players)
+            {
+                if (Main.StockBattle_Lives.Value - instance.deathsThisBattle[player.playerID] > 0)
+                {
+                    if (winning_team != -1 && winning_team != player.teamID) return;
+                    winning_team = player.teamID;
+                }
+            }
+            if(winning_team != -1)
+                NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
+                                {
+                            new int[] { winning_team },
+                            teamPoints,
+                            teamRounds
+                                });
         }
 
         public void UpdateScores()
         {
-
-            Dictionary<int, int> teamKills = new Dictionary<int, int>() { };
             foreach (Player player in PlayerManager.instance.players)
             {
-                if (!teamKills.ContainsKey(player.teamID)) { teamKills[player.teamID] = 0; }
-                teamKills[player.teamID] += KillsThisBattle[player.playerID];
-            }
-            int maxKills = teamKills[teamKills.Keys.OrderBy(t => -teamKills[t]).First()];
-            int minKills = teamKills[teamKills.Keys.OrderBy(t => teamKills[t]).First()];
-            foreach (Player player in PlayerManager.instance.players)
-            {
-                Color color = Color.yellow;
-                if (minKills != maxKills)
-                {
-                    if (teamKills[player.teamID] == minKills)
-                        color = Color.red;
-                    if (teamKills[player.teamID] == maxKills) 
-                        color = Color.green;
-                }
-                if (Main.TimedDeathmatch_Inverted.Value)
-                {
-                    if (GameModeManager.CurrentHandler.AllowTeams)
-                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]} (-{teamKills[player.teamID]})", color);
-                    else
-                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{-KillsThisBattle[player.playerID]}", color);
-                }
-                else
-                {
-                    if (GameModeManager.CurrentHandler.AllowTeams)
-                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]} ({teamKills[player.teamID]})", color);
-                    else
-                        player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{KillsThisBattle[player.playerID]}", color);
-                }
+                int lives = Main.StockBattle_Lives.Value - deathsThisBattle[player.playerID];
+                float lives_percent = (lives - 1) / (float)(Main.StockBattle_Lives.Value - 1);
+                Color color = new Color(1 - lives_percent, lives_percent, 0,1);
+                player.gameObject.GetOrAddComponent<Timed_Kills>().UpdateScore($"{lives}", color);
             }
         }
 
@@ -208,8 +226,18 @@ namespace Simple_Gamemodes.Gamemodes
         [UnboundRPC]
         public static void RPC_DoRespawn(int playerID, float delay, Vector3 point)
         {
+            instance.deathsThisBattle[playerID]++;
+            UnityEngine.Debug.Log(instance.deathsThisBattle[playerID]);
+            instance.UpdateScores();
             Player killedPlayer = PlayerManager.instance.players.Find(p => p.playerID == playerID);
-            instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay, point));
+            if (Main.StockBattle_Lives.Value - instance.deathsThisBattle[playerID] > 0)
+                instance.StartCoroutine(instance.IRespawnPlayer(killedPlayer, delay, point));
+            else
+            {
+
+                instance.awaitingRespawn.Remove(playerID);
+                instance.CheckForWinner();
+            }
         }
 
         public IEnumerator IRespawnPlayer(Player player, float delay, Vector3 point)
@@ -237,10 +265,10 @@ namespace Simple_Gamemodes.Gamemodes
                 player.data.stats.GetAditionalData().invanerable = true;
                 player.data.playerVel.SetFieldValue("simulated", true);
                 player.GetComponent<GeneralInput>().enabled = true; 
-                lastPlayerDamage[player.playerID] = player.playerID;
                 this.awaitingRespawn.Remove(player.playerID);
                 yield return new WaitForSecondsRealtime(0.5f);
                 player.data.stats.GetAditionalData().invanerable = false;
+
             }
         }
 
@@ -254,20 +282,15 @@ namespace Simple_Gamemodes.Gamemodes
         public override void PlayerJoined(Player player)
         {
             this.deathsThisBattle[player.playerID] = 0;
-            this.KillsThisBattle[player.playerID] = 0;
-            this.lastPlayerDamage[player.playerID] = player.playerID;
             player.gameObject.GetOrAddComponent<Timed_Kills>();
             base.PlayerJoined(player);
         }
         public override IEnumerator DoPointStart()
         {
             this.deathsThisBattle = new Dictionary<int, int>() { };
-            this.KillsThisBattle = new Dictionary<int, int>() { };
             foreach (Player player in PlayerManager.instance.players)
             {
                 this.deathsThisBattle[player.playerID] = 0;
-                this.KillsThisBattle[player.playerID] = 0;
-                this.lastPlayerDamage[player.playerID] = player.playerID;
             }
             yield return base.DoPointStart();
             UpdateScores();
@@ -278,12 +301,9 @@ namespace Simple_Gamemodes.Gamemodes
         public override IEnumerator DoRoundStart()
         {
             this.deathsThisBattle = new Dictionary<int, int>() { };
-            this.KillsThisBattle = new Dictionary<int, int>() { };
             foreach (Player player in PlayerManager.instance.players)
             {
                 this.deathsThisBattle[player.playerID] = 0;
-                this.KillsThisBattle[player.playerID] = 0;
-                this.lastPlayerDamage[player.playerID] = player.playerID;
             }
             yield return base.DoRoundStart();
             UpdateScores();

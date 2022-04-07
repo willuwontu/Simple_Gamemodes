@@ -1,9 +1,11 @@
 ﻿using HarmonyLib;
+using Simple_Gamemodes.Extentions;
 using Simple_Gamemodes.Gamemodes;
 using System;
 using System.Collections.Generic;
 using System.Text;
 using UnboundLib;
+using UnityEngine;
 
 namespace Simple_Gamemodes.Patches
 {
@@ -11,8 +13,14 @@ namespace Simple_Gamemodes.Patches
     [HarmonyPatch(typeof(HealthHandler), "DoDamage")]
     internal class HealthHandlerPatchDoDamage
     {
-        private static void Prefix(HealthHandler __instance, Player damagingPlayer)
+        private static bool Prefix(HealthHandler __instance, Player damagingPlayer)
         {
+            if (((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().invanerable)
+            {
+                __instance.GetComponentInChildren<PlayerSkinHandler>().BlinkColor(Color.black);
+                return false;
+            }
+
             if (damagingPlayer != null && GM_Timed_Deathmatch.instance != null)
             {
                 if (ModdingUtils.AIMinion.Extensions.CharacterDataExtension.GetAdditionalData(damagingPlayer.data).isAIMinion)
@@ -20,6 +28,7 @@ namespace Simple_Gamemodes.Patches
                 else 
                     GM_Timed_Deathmatch.instance.lastPlayerDamage[((CharacterData)__instance.GetFieldValue("data")).player.playerID] = damagingPlayer.playerID;
             }
+            return true;
         }
     }
 }

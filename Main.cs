@@ -31,10 +31,12 @@ namespace Simple_Gamemodes
 
         private const string ModId = "Root.Simple.Gamemodes";
         private const string ModName = "Simple_Gamemodes";
-        public const string Version = "1.1.1"; // What version are we on (major.minor.patch)?
+        public const string Version = "1.2.1"; // What version are we on (major.minor.patch)?
 
         public static ConfigEntry<int> TimedDeathmatch_Time;
         public static ConfigEntry<bool> TimedDeathmatch_Inverted;
+        public static ConfigEntry<int> StockBattle_Lives;
+        public static ConfigEntry<bool> StockBattle_Timed;
 
         void Awake()
         {
@@ -44,6 +46,8 @@ namespace Simple_Gamemodes
 
             TimedDeathmatch_Time = Config.Bind(ModName, "TD_Time", 180, "Duration of Timed Deathmatch rounds in seconds");
             TimedDeathmatch_Inverted = Config.Bind(ModName, "TD_Invert", false, "Enable to use deaths instead of kills for scoring in Timed Deathmatch");
+            StockBattle_Lives = Config.Bind(ModName, "SB_Lives", 3, "Number of lives in Stock Battle");
+            StockBattle_Timed = Config.Bind(ModName, "SB_Timed", false, "Enable to used the timer for Stock Battle");
         }
 
         void Start()
@@ -52,6 +56,8 @@ namespace Simple_Gamemodes
            // GameModeManager.AddHandler<GM_Reverse_Rounds>(Team_Reverse_Rounds_Handler.GameModeID, new Team_Reverse_Rounds_Handler());
             GameModeManager.AddHandler<GM_Timed_Deathmatch>(Timed_Deathmatch_Handler.GameModeID, new Timed_Deathmatch_Handler());
             GameModeManager.AddHandler<GM_Timed_Deathmatch>(Team_Timed_Deathmatch_Handler.GameModeID, new Team_Timed_Deathmatch_Handler());
+            GameModeManager.AddHandler<GM_Stock_Battle>(Stock_Battle_Handler.GameModeID, new Stock_Battle_Handler());
+            GameModeManager.AddHandler<GM_Stock_Battle>(Team_Stock_Battle_Handler.GameModeID, new Team_Stock_Battle_Handler());
             Unbound.RegisterHandshake(ModId, this.OnHandShakeCompleted);
 
 
@@ -62,15 +68,17 @@ namespace Simple_Gamemodes
         { 
             if (PhotonNetwork.IsMasterClient)
             {
-                NetworkingManager.RPC_Others(typeof(Main), nameof(SyncSettings), new object[] { TimedDeathmatch_Time.Value, TimedDeathmatch_Inverted.Value });
+                NetworkingManager.RPC_Others(typeof(Main), nameof(SyncSettings), new object[] { TimedDeathmatch_Time.Value, TimedDeathmatch_Inverted.Value, StockBattle_Lives.Value, StockBattle_Timed.Value});
             }
         }
 
         [UnboundRPC]
-        private static void SyncSettings(int host_TD_Time, bool host_TD_Invert)
+        private static void SyncSettings(int host_TD_Time, bool host_TD_Invert, int host_SB_Lives, bool host_SB_Timed)
         {
             TimedDeathmatch_Time.Value = host_TD_Time;
             TimedDeathmatch_Inverted.Value = host_TD_Invert;
+            StockBattle_Lives.Value = host_SB_Lives;
+            StockBattle_Timed.Value = host_SB_Timed;
         }
 
         private void NewGUI(GameObject menu)
@@ -82,6 +90,9 @@ namespace Simple_Gamemodes
             MenuHandler.CreateText(get_time_text(TimedDeathmatch_Time.Value), menu, out Timer, 75);
             MenuHandler.CreateToggle(TimedDeathmatch_Inverted.Value, "Enable to use deaths instead of kills for scoring in Timed Deathmatch", menu, (value) => TimedDeathmatch_Inverted.Value = value, 30);
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
+            MenuHandler.CreateSlider("Number of Lives for Stock Battle", menu, 30, 2, 99, StockBattle_Lives.Value, (value) => StockBattle_Lives.Value = (int)value, out _, true);
+
+            MenuHandler.CreateToggle(StockBattle_Timed.Value, "Enable to used the timer for Stock Battle", menu, (value) => StockBattle_Timed.Value = value, 30);
 
             void TD_Timer_Changed(float val)
             {

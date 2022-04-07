@@ -6,11 +6,11 @@ using System.Text;
 
 namespace Simple_Gamemodes.GamemodeHandlers
 {
-    public class Timed_Deathmatch_Handler : RWFGameModeHandler<GM_Timed_Deathmatch>
+    public class Stock_Battle_Handler : RWFGameModeHandler<GM_Stock_Battle>
     {
-        internal const string GameModeName = "Timed Deathmatch";
-        internal const string GameModeID = "Timed_Deathmatch";
-        public Timed_Deathmatch_Handler() : base(
+        internal const string GameModeName = "Stock Battle";
+        internal const string GameModeID = "Stock_Battle";
+        public Stock_Battle_Handler() : base(
             name: GameModeName,
             gameModeId: GameModeID,
             allowTeams: false,
@@ -21,17 +21,17 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.")
+            description: $"Free for all with limited respawns enabled")
         {
 
         }
     }
     
-    public class Team_Timed_Deathmatch_Handler : RWFGameModeHandler<GM_Timed_Deathmatch>
+    public class Team_Stock_Battle_Handler : RWFGameModeHandler<GM_Stock_Battle>
     {
-        internal const string GameModeName = "Team Timed Deathmatch";
-        internal const string GameModeID = "Team_Timed_Deathmatch";
-        public Team_Timed_Deathmatch_Handler() : base(
+        internal const string GameModeName = "Team Stock Battle";
+        internal const string GameModeID = "Team_Stock_Battle";
+        public Team_Stock_Battle_Handler() : base(
             name: GameModeName,
             gameModeId: GameModeID,
             allowTeams: true,
@@ -42,7 +42,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.")
+            description: $"Team battle with limited respawns enabled")
         {
 
         }

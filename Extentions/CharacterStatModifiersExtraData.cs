@@ -10,13 +10,16 @@ namespace Simple_Gamemodes.Extentions
     public class CharacterStatModifiersExtraData
     {
         public bool Removing;
+        public bool invanerable;
 
         public CharacterStatModifiersExtraData()
         {
             this.Removing = false;
+            this.invanerable = false;
         }
         public void Reset()
         {
+            this.invanerable = false;
         }
     }
 

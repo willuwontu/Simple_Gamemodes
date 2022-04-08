@@ -32,7 +32,7 @@ namespace Simple_Gamemodes.Monos
                     _kills.transform.position = (player.transform.Find("WobbleObjects/Healthbar/Canvas/CrownPos").position + (Vector3.up * 1));
 
                     var text = _kills.GetComponent<TextMeshProUGUI>();
-                    text.text = "Timer";
+                    text.text = "";
                     text.alignment = TextAlignmentOptions.Center;
                     text.fontSize = 1f;
 

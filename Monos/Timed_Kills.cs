@@ -15,52 +15,26 @@ namespace Simple_Gamemodes.Monos
     {
         Player player;
 
-        GameObject _killFrame;
         GameObject _kills;
 
-        GameObject KillFrame
-        {
-            get
-            {
-                if (!_killFrame)
-                {
-                    _killFrame = Instantiate(player.transform.Find("WobbleObjects/Healthbar"), player.transform.Find("WobbleObjects")).gameObject;
-                    _killFrame.name = "Kills Frame";
-                    _killFrame.transform.localScale = Vector3.one;
-                    _killFrame.transform.localPosition = new Vector3(0, 0.851f, 0);
-
-                    UnityEngine.GameObject.Destroy(_killFrame.GetComponent<HealthBar>());
-
-                    var killCanvas = _killFrame.transform.Find("Canvas").gameObject;
-
-                    var COs = killCanvas.GetComponentsInChildren<Transform>().Where(child => child.parent == killCanvas.transform).Select(child => child.gameObject).ToArray();
-                    foreach (var CO in COs)
-                    {
-                        UnityEngine.GameObject.Destroy(CO);
-                    }
-                }
-
-                return _killFrame;
-            }
-        }
         GameObject Kills
         {
             get
             {
                 if (!_kills)
                 {
-                    var _ = KillFrame;
-                    _kills = new GameObject("Kill Counter", typeof(RectTransform), typeof(TextMeshProUGUI));
-                    _kills.transform.SetParent(KillFrame.transform.Find("Canvas"));
+                    _kills = new GameObject("Kill Counter", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(Canvas));
+                    _kills.transform.SetParent(player.transform);
 
                     var rect = _kills.GetComponent<RectTransform>();
                     rect.localScale = Vector3.one;
-                    rect.localPosition = new Vector3(0, 150, 0);
+
+                    _kills.transform.position = (player.transform.Find("WobbleObjects/Healthbar/Canvas/CrownPos").position + (Vector3.up * 1));
 
                     var text = _kills.GetComponent<TextMeshProUGUI>();
                     text.text = "Timer";
                     text.alignment = TextAlignmentOptions.Center;
-                    text.fontSize = 200f;
+                    text.fontSize = 1f;
 
                     var fitter = _kills.AddComponent<UnityEngine.UI.ContentSizeFitter>();
                     fitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
@@ -73,14 +47,17 @@ namespace Simple_Gamemodes.Monos
         public void Start()
         {
             this.player = this.GetComponentInParent<Player>();
+        }
 
-            this.UpdateScore("0", new Color32(255, 255, 255, 255));
+        public void Update()
+        {
+            this.Kills.transform.localScale = new Vector3(1 / player.transform.localScale.x, 1 / player.transform.localScale.y, 1 / player.transform.localScale.z);
         }
 
 
         public void OnDestroy()
         {
-            UnityEngine.GameObject.Destroy(KillFrame);
+            UnityEngine.GameObject.Destroy(Kills);
         }
 
         public void UpdateScore(string points, Color color)

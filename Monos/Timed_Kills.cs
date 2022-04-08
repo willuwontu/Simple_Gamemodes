@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq;
 using TMPro;
 using UnboundLib;
 using UnboundLib.GameModes;
@@ -10,32 +11,59 @@ using UnityEngine;
 
 namespace Simple_Gamemodes.Monos
 {
-    internal class Timed_Kills : ReversibleEffect
+    internal class Timed_Kills : MonoBehaviour
     {
-        GameObject kills;
-        public override void OnStart()
+        Player player;
+
+        GameObject _kills;
+
+        GameObject Kills
         {
-            SetLivesToEffect(int.MaxValue);
-            kills = new GameObject("Score_Tracker");
-            kills.transform.SetParent(player.transform.Find("WobbleObjects"), false);
-            kills.transform.localPosition = Vector3.up * 1.75f;
-            kills.GetOrAddComponent<TextMeshProUGUI>().text = "";
-            kills.GetOrAddComponent<TextMeshProUGUI>().color = Color.yellow;
-            kills.GetOrAddComponent<TextMeshProUGUI>().fontSize = 0.75f;
-            kills.GetOrAddComponent<TextMeshProUGUI>().alignment = TextAlignmentOptions.Center;
-            kills.GetOrAddComponent<Canvas>().sortingLayerName = "MostFront";
+            get
+            {
+                if (!_kills)
+                {
+                    _kills = new GameObject("Kill Counter", typeof(RectTransform), typeof(TextMeshProUGUI), typeof(Canvas));
+                    _kills.transform.SetParent(player.transform);
+
+                    var rect = _kills.GetComponent<RectTransform>();
+                    rect.localScale = Vector3.one;
+
+                    _kills.transform.position = (player.transform.Find("WobbleObjects/Healthbar/Canvas/CrownPos").position + (Vector3.up * 1));
+
+                    var text = _kills.GetComponent<TextMeshProUGUI>();
+                    text.text = "";
+                    text.alignment = TextAlignmentOptions.Center;
+                    text.fontSize = 1f;
+
+                    var fitter = _kills.AddComponent<UnityEngine.UI.ContentSizeFitter>();
+                    fitter.horizontalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
+                    fitter.verticalFit = UnityEngine.UI.ContentSizeFitter.FitMode.PreferredSize;
+                }
+
+                return _kills;
+            }
+        }
+        public void Start()
+        {
+            this.player = this.GetComponentInParent<Player>();
+        }
+
+        public void Update()
+        {
+            this.Kills.transform.localScale = new Vector3(1 / player.transform.localScale.x, 1 / player.transform.localScale.y, 1 / player.transform.localScale.z);
         }
 
 
-        public override void OnOnDestroy()
+        public void OnDestroy()
         {
-            Destroy(kills);
+            UnityEngine.GameObject.Destroy(Kills);
         }
 
         public void UpdateScore(string points, Color color)
         {
-            kills.GetOrAddComponent<TextMeshProUGUI>().text = points;
-            kills.GetOrAddComponent<TextMeshProUGUI>().color = color;
+            Kills.GetOrAddComponent<TextMeshProUGUI>().text = points;
+            Kills.GetOrAddComponent<TextMeshProUGUI>().color = color;
         }
     }
 }

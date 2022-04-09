@@ -202,13 +202,22 @@ namespace Simple_Gamemodes.Gamemodes
                     winning_team = player.teamID;
                 }
             }
-            if(winning_team != -1)
+            if (winning_team != -1)
+            {
+
+                if (Main.StockBattle_Timed.Value)
+                {
+                    Timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
+                    inRound = false;
+                    TimeLeftInRound = -1;
+                }
                 NetworkingManager.RPC(typeof(RWFGameMode), "RPCA_NextRound", new object[3]
                                 {
                             new int[] { winning_team },
                             teamPoints,
                             teamRounds
                                 });
+            }
         }
 
         public void UpdateScores()

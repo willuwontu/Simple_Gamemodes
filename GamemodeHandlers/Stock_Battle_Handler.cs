@@ -21,7 +21,8 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Free for all with limited respawns enabled")
+            description: $"Free for all with limited respawns enabled",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Stock_Battle.MP4")
         {
 
         }
@@ -42,7 +43,8 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Team battle with limited respawns enabled")
+            description: $"Team battle with limited respawns enabled",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Stock_Battle.MP4")
         {
 
         }

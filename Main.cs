@@ -31,7 +31,7 @@ namespace Simple_Gamemodes
 
         private const string ModId = "Root.Simple.Gamemodes";
         private const string ModName = "Simple_Gamemodes";
-        public const string Version = "1.2.1"; // What version are we on (major.minor.patch)?
+        public const string Version = "1.2.2"; // What version are we on (major.minor.patch)?
 
         public static ConfigEntry<int> TimedDeathmatch_Time;
         public static ConfigEntry<bool> TimedDeathmatch_Inverted;
@@ -47,7 +47,7 @@ namespace Simple_Gamemodes
             TimedDeathmatch_Time = Config.Bind(ModName, "TD_Time", 180, "Duration of Timed Deathmatch rounds in seconds");
             TimedDeathmatch_Inverted = Config.Bind(ModName, "TD_Invert", false, "Enable to use deaths instead of kills for scoring in Timed Deathmatch");
             StockBattle_Lives = Config.Bind(ModName, "SB_Lives", 3, "Number of lives in Stock Battle");
-            StockBattle_Timed = Config.Bind(ModName, "SB_Timed", false, "Enable to used the timer for Stock Battle");
+            StockBattle_Timed = Config.Bind(ModName, "SB_Timed", false, "Enable to use the timer for Stock Battle");
         }
 
         void Start()
@@ -92,7 +92,7 @@ namespace Simple_Gamemodes
             MenuHandler.CreateText(" ", menu, out TextMeshProUGUI _, 30);
             MenuHandler.CreateSlider("Number of Lives for Stock Battle", menu, 30, 2, 99, StockBattle_Lives.Value, (value) => StockBattle_Lives.Value = (int)value, out _, true);
 
-            MenuHandler.CreateToggle(StockBattle_Timed.Value, "Enable to used the timer for Stock Battle", menu, (value) => StockBattle_Timed.Value = value, 30);
+            MenuHandler.CreateToggle(StockBattle_Timed.Value, "Enable to use the timer for Stock Battle", menu, (value) => StockBattle_Timed.Value = value, 30);
 
             void TD_Timer_Changed(float val)
             {

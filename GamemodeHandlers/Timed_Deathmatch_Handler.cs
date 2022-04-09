@@ -21,7 +21,8 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.")
+            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Timed_Deathmatch.MP4")
         {
 
         }
@@ -42,7 +43,8 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.")
+            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Timed_Deathmatch.MP4")
         {
 
         }

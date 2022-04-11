@@ -100,16 +100,9 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override void RoundOver(int[] winningTeamIDs)
         {
-            Destroy(titan.GetComponent<TITAN>());
             int id = titan.teamID;
 
             int points_to_win = (int)GameModeManager.CurrentHandler.Settings["pointsToWinRound"];
-
-
-            foreach (Player player in PlayerManager.instance.players)
-            {
-                if (player != titan) Destroy(player.GetComponent<Fighter>());
-            }
             for(int i = 0; i < teamPoints.Count; i++)
             {
                 if(teamPoints[i] >= points_to_win) teamPoints[i] -= points_to_win;

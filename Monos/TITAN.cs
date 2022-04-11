@@ -20,6 +20,7 @@ namespace Simple_Gamemodes.Monos
             applyImmediately = true;
             SetLivesToEffect(int.MaxValue);
             GameModeManager.AddHook(GameModeHooks.HookBattleStart, stats);
+            GameModeManager.AddHook(GameModeHooks.HookRoundEnd, OnRoundEnd);
         }
 
         public IEnumerator stats(IGameModeHandler gm)
@@ -34,8 +35,15 @@ namespace Simple_Gamemodes.Monos
         public override void OnOnDestroy()
         {
             GameModeManager.RemoveHook(GameModeHooks.HookGameStart, stats);
+            GameModeManager.RemoveHook(GameModeHooks.HookRoundEnd, OnRoundEnd);
             player.gameObject.transform.Find("WobbleObjects/Healthbar/Canvas/PlayerName").GetComponent<TextMeshProUGUI>().color = new Color(0.6132f, 0.6132f, 0.6132f);
             data.stats.GetAditionalData().damageCap = 1.0f;
+        }
+
+        public IEnumerator OnRoundEnd(IGameModeHandler gm)
+        {
+            Destroy(this);
+            yield break;
         }
     }
 }

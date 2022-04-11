@@ -15,7 +15,6 @@ namespace Simple_Gamemodes.Patches
     {
         private static bool Prefix(HealthHandler __instance, ref Vector2 damage, ref Player damagingPlayer)
         {
-            
             if (((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().invanerable)
             {
                 __instance.GetComponentInChildren<PlayerSkinHandler>().BlinkColor(Color.black);

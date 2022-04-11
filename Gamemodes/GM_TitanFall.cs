@@ -2,6 +2,7 @@
 using RWF.GameModes;
 using Simple_Gamemodes.Cards.TitanFall;
 using Simple_Gamemodes.Extentions;
+using Simple_Gamemodes.Monos;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -34,23 +35,20 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override IEnumerator DoRoundStart()
         {
-            List<Player> players = PlayerManager.instance.players.ToList();
-            if (titanQueue.Count == 0)
+            if (PhotonNetwork.IsMasterClient)
             {
-                do
+                List<Player> players = PlayerManager.instance.players.ToList();
+                if (titanQueue.Count == 0)
                 {
-                    players.Shuffle();
-                } while (players.First() == titan);
-                titanQueue = players;
-            }
-            titan = titanQueue.First();
-            titanQueue.RemoveAt(0);
-            if (PhotonNetwork.IsMasterClient) NetworkingManager.RPC(typeof(GM_TitanFall), nameof(Sync), titan.playerID);
-            ModdingUtils.Utils.Cards.instance.AddCardToPlayer(titan, Titan_Card.cardInfo, addToCardBar: true);
-            for(int i = 0; i < players.Count; i++)
-            {
-                if(players.ElementAt(i) != titan)
-                    ModdingUtils.Utils.Cards.instance.AddCardToPlayer(players.ElementAt(i), Fighter_Card.cardInfo, addToCardBar: true);
+                    do
+                    {
+                        players.Shuffle();
+                    } while (players.First() == titan);
+                    titanQueue = players;
+                }
+                titan = titanQueue.First();
+                titanQueue.RemoveAt(0);
+                NetworkingManager.RPC(typeof(GM_TitanFall), nameof(Sync), titan.playerID);
             }
             return base.DoRoundStart();
         }
@@ -59,6 +57,14 @@ namespace Simple_Gamemodes.Gamemodes
         public static void Sync(int playerID)
         {
             instance.titan = PlayerManager.instance.players.Where(p => p.playerID == playerID).First();
+            List<Player> players = PlayerManager.instance.players.ToList();
+
+            instance.titan.gameObject.AddComponent<TITAN>();
+            for (int i = 0; i < players.Count; i++)
+            {
+                if (players.ElementAt(i) != instance.titan)
+                    players.ElementAt(i).gameObject.AddComponent<Fighter>(); 
+            }
         }
 
         public override void PlayerDied(Player killedPlayer, int teamsAlive)
@@ -94,7 +100,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override void RoundOver(int[] winningTeamIDs)
         {
-            ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(titan, Titan_Card.cardInfo,ModdingUtils.Utils.Cards.SelectionType.All);
+            Destroy(titan.GetComponent<TITAN>());
             int id = titan.teamID;
 
             int points_to_win = (int)GameModeManager.CurrentHandler.Settings["pointsToWinRound"];
@@ -102,7 +108,7 @@ namespace Simple_Gamemodes.Gamemodes
 
             foreach (Player player in PlayerManager.instance.players)
             {
-                if (player != titan) ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(player, Fighter_Card.cardInfo, ModdingUtils.Utils.Cards.SelectionType.All);
+                if (player != titan) Destroy(player.GetComponent<Fighter>());
             }
             for(int i = 0; i < teamPoints.Count; i++)
             {

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using TMPro;
 using UnboundLib.Cards;
 using UnityEngine;
 
@@ -19,6 +20,12 @@ namespace Simple_Gamemodes.Cards.TitanFall
         public override void OnAddCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
         {
             characterStats.GetAditionalData().damageCap = 1.0f/PlayerManager.instance.players.Count;
+            player.gameObject.transform.Find("WobbleObjects/Healthbar/Canvas/PlayerName").GetComponent<TextMeshProUGUI>().color = Color.red;
+        }
+
+        public override void OnRemoveCard(Player player, Gun gun, GunAmmo gunAmmo, CharacterData data, HealthHandler health, Gravity gravity, Block block, CharacterStatModifiers characterStats)
+        {
+            player.gameObject.transform.Find("WobbleObjects/Healthbar/Canvas/PlayerName").GetComponent<TextMeshProUGUI>().color = new Color(0.6132f, 0.6132f, 0.6132f);
         }
 
         protected override GameObject GetCardArt()

@@ -94,22 +94,27 @@ namespace Simple_Gamemodes.Gamemodes
 
         public override void RoundOver(int[] winningTeamIDs)
         {
-            ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(titan, Titan_Card.cardInfo,ModdingUtils.Utils.Cards.SelectionType.All);
             int id = titan.teamID;
 
             int points_to_win = (int)GameModeManager.CurrentHandler.Settings["pointsToWinRound"];
 
 
-            foreach (Player player in PlayerManager.instance.players)
-            {
-                if (player != titan) ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(player, Fighter_Card.cardInfo, ModdingUtils.Utils.Cards.SelectionType.All);
-            }
             for(int i = 0; i < teamPoints.Count; i++)
             {
                 if(teamPoints[i] >= points_to_win) teamPoints[i] -= points_to_win;
             }
             previousRoundWinners = winningTeamIDs.ToArray();
             StartCoroutine(RoundTransition(winningTeamIDs));
+
+            Unbound.Instance.ExecuteAfterSeconds(2, () =>
+             {
+                 ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(titan, Titan_Card.cardInfo, ModdingUtils.Utils.Cards.SelectionType.All);
+
+                 foreach (Player player in PlayerManager.instance.players)
+                 {
+                     if (player != titan) ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(player, Fighter_Card.cardInfo, ModdingUtils.Utils.Cards.SelectionType.All);
+                 }
+             });
         }
     }
 }

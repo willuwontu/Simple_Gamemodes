@@ -11,15 +11,21 @@ namespace Simple_Gamemodes.Extentions
     {
         public bool Removing;
         public bool invanerable;
+        public float damageCap;
+        public float damageCapFilled;
 
         public CharacterStatModifiersExtraData()
         {
             this.Removing = false;
             this.invanerable = false;
+            this.damageCap = 0f;
+            this.damageCapFilled = 0f;
         }
         public void Reset()
         {
             this.invanerable = false;
+            this.damageCap = 0f;
+            this.damageCapFilled = 0f;
         }
     }
 

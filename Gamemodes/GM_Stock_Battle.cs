@@ -74,7 +74,7 @@ namespace Simple_Gamemodes.Gamemodes
         }
         public void Update()
         {
-            if (Main.StockBattle_Timed.Value)
+            if (Main.StockBattle_Timed.Value != 0)
             {
                 if (TimeLeftInRound <= 0)
                 {
@@ -205,7 +205,7 @@ namespace Simple_Gamemodes.Gamemodes
             if (winning_team != -1)
             {
 
-                if (Main.StockBattle_Timed.Value)
+                if (Main.StockBattle_Timed.Value != 0)
                 {
                     Timer.GetOrAddComponent<TextMeshProUGUI>().text = "";
                     inRound = false;
@@ -340,7 +340,7 @@ namespace Simple_Gamemodes.Gamemodes
 
         private void resetRoundTimer()
         {
-            TimeLeftInRound = Main.TimedDeathmatch_Time.Value;
+            TimeLeftInRound = Main.StockBattle_Timed.Value;
         }
     }
 }

@@ -15,7 +15,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             gameModeId: GameModeID,
             allowTeams: false,
             pointsToWinRound: 2,
-            roundsToWinGame: 5,
+            roundsToWinGame: 3,
             // null values mean RWF's instance values
             playersRequiredToStartGame: null,
             maxPlayers: null,

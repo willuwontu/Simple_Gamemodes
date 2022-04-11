@@ -6,6 +6,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using TMPro;
+using UnboundLib;
 using UnboundLib.GameModes;
 using UnityEngine;
 
@@ -35,14 +36,19 @@ namespace Simple_Gamemodes.Monos
         public override void OnOnDestroy()
         {
             GameModeManager.RemoveHook(GameModeHooks.HookGameStart, stats);
-            GameModeManager.RemoveHook(GameModeHooks.HookRoundEnd, OnRoundEnd);
+            UnboundLib.Unbound.Instance.ExecuteAfterFrames(5, () =>
+            GameModeManager.RemoveHook(GameModeHooks.HookRoundEnd, OnRoundEnd));
             player.gameObject.transform.Find("WobbleObjects/Healthbar/Canvas/PlayerName").GetComponent<TextMeshProUGUI>().color = new Color(0.6132f, 0.6132f, 0.6132f);
             data.stats.GetAditionalData().damageCap = 1.0f;
         }
 
         public IEnumerator OnRoundEnd(IGameModeHandler gm)
         {
-            Destroy(this);
+            try
+            {
+                Destroy(this);
+            }
+            catch { }
             yield break;
         }
     }

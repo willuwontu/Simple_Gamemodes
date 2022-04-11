@@ -21,7 +21,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Free For All Deathmatch. Last player standing wins. Point role over enabled.    Blame RS_Mind he asked for this.",
+            description: $"Free For All Deathmatch. Last player standing wins. Point roll over enabled.    Blame RS_Mind he asked for this.",
             videoURL: "https://github.com/olavim/RoundsWithFriends/raw/main/Media/TeamDeathmatch.mp4")
         {
 
@@ -43,7 +43,7 @@ namespace Simple_Gamemodes.GamemodeHandlers
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Team Deathmatch. Last team standing wins. Point role over enabled.    Blame RS_Mind he asked for this.",
+            description: $"Team Deathmatch. Last team standing wins. Point roll over enabled.    Blame RS_Mind he asked for this.",
             videoURL: "https://github.com/olavim/RoundsWithFriends/raw/main/Media/TeamDeathmatch.mp4")
         {
 

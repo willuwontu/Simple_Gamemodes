@@ -1,8 +1,11 @@
 ﻿using ModdingUtils.GameModes;
 using ModdingUtils.MonoBehaviours;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using UnboundLib.GameModes;
+using UnityEngine;
 
 namespace Simple_Gamemodes.Monos
 {
@@ -12,7 +15,21 @@ namespace Simple_Gamemodes.Monos
         public override void OnStart()
         {
             characterStatModifiersModifier.sizeMultiplier_mult = 0.5f;
+            applyImmediately = true;
             SetLivesToEffect(int.MaxValue);
+            GameModeManager.AddHook(GameModeHooks.HookBattleStart, stats);
+        }
+
+        public IEnumerator stats(IGameModeHandler gm)
+        {
+            ClearModifiers();
+            yield return new WaitForEndOfFrame();
+            ApplyModifiers();
+            yield break;
+        }
+        public override void OnOnDestroy()
+        {
+            GameModeManager.RemoveHook(GameModeHooks.HookGameStart, stats);
         }
     }
 }

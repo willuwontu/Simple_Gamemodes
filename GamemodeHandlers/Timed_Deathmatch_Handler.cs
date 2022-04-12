@@ -15,13 +15,14 @@ namespace Simple_Gamemodes.GamemodeHandlers
             gameModeId: GameModeID,
             allowTeams: false,
             pointsToWinRound: 1,
-            roundsToWinGame: 5,
+            roundsToWinGame: 3,
             // null values mean RWF's instance values
             playersRequiredToStartGame: null,
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.")
+            description: $"Timed free for all. Respawns enabled. The Player with the most kills each round wins.",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Timed_Deathmatch.MP4")
         {
 
         }
@@ -36,13 +37,14 @@ namespace Simple_Gamemodes.GamemodeHandlers
             gameModeId: GameModeID,
             allowTeams: true,
             pointsToWinRound: 1,
-            roundsToWinGame: 3,
+            roundsToWinGame: 5,
             // null values mean RWF's instance values
             playersRequiredToStartGame: null,
             maxPlayers: null,
             maxTeams: null,
             maxClients: null,
-            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.")
+            description: $"Timed free for all. Respawns enabled. The Team with the most kills each round wins.",
+            videoURL: "https://github.com/Tess-y/Simple_Gamemodes/raw/master/Videos/Timed_Deathmatch.MP4")
         {
 
         }

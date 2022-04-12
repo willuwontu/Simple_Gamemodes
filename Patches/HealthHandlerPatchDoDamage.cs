@@ -13,7 +13,7 @@ namespace Simple_Gamemodes.Patches
     [HarmonyPatch(typeof(HealthHandler), "DoDamage")]
     internal class HealthHandlerPatchDoDamage
     {
-        private static bool Prefix(HealthHandler __instance, Player damagingPlayer)
+        private static bool Prefix(HealthHandler __instance, ref Vector2 damage, ref Player damagingPlayer)
         {
             if (((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().invanerable)
             {
@@ -28,7 +28,25 @@ namespace Simple_Gamemodes.Patches
                 else 
                     GM_Timed_Deathmatch.instance.lastPlayerDamage[((CharacterData)__instance.GetFieldValue("data")).player.playerID] = damagingPlayer.playerID;
             }
+
+            if(((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().damageCap != 0)
+            {
+                damage = clampMagnatued(damage, 
+                    (((CharacterData)__instance.GetFieldValue("data")).maxHealth * ((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().damageCap) - ((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().damageCapFilled);
+            }
             return true;
+        }
+
+        private static void Postfix(HealthHandler __instance, ref Vector2 damage, ref Player damagingPlayer)
+        {
+            ((CharacterStatModifiers)__instance.GetFieldValue("stats")).GetAditionalData().damageCapFilled += damage.magnitude;
+        }
+
+        private static Vector2 clampMagnatued(Vector2 vector, float max)
+        {
+            float oldMag = vector.magnitude;
+            if (oldMag <= max) return vector;
+            return vector.normalized * max;
         }
     }
 }

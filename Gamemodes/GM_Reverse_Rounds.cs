@@ -157,7 +157,7 @@ namespace Simple_Gamemodes.Gamemodes
         public override void OnPurchase(Player player, Purchasable item)
         {
             CardInfo card = ((PurchasableCard)item).Card;
-            Cards.instance.RemoveCardFromPlayer(player, card, Cards.SelectionType.Newest, false);
+            ModdingUtils.Utils.Cards.instance.RemoveCardFromPlayer(player, card, ModdingUtils.Utils.Cards.SelectionType.Newest, false);
             player.data.stats.GetAditionalData().Removing = false;
         }
     }
